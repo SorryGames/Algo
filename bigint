@@ -1,0 +1,748 @@
+class bigint {
+private:
+    int sz;
+    int above;
+    const int ss = 10;
+    const int MAX_SZ = 100000;
+    vector <int> a;
+public:
+    bigint (const string &s);
+    bigint (int s);
+    bigint ();
+    bigint& operator++ ();
+    bigint& operator-- ();
+    bool operator== (const bigint &b);
+    bool operator< (const bigint &b);
+    bool operator> (const bigint &b);
+    bool operator>= (const bigint &b);
+    bool operator<= (const bigint &b);
+    bool operator!= (const bigint &b);
+    bigint& operator= (const bigint &b);
+    bigint& operator= (const int &c);
+    bigint& operator+= (const bigint &b);
+    bigint& operator-= (const bigint &b);
+    bigint& operator+= (const int &c);
+    bigint& operator-= (const int &c);
+    bigint operator+ (const bigint &b) const;
+    bigint operator+ (const int &b) const;
+    bigint operator- (const bigint &b) const;
+    bigint operator- (const int &b) const;
+    bigint& operator*= (const bigint &b);
+    bigint& operator*= (int c);
+    bigint operator* (const bigint &b) const;
+    bigint operator* (const int &b) const;
+    bigint& operator/= (int b);
+    bigint operator/ (int b) const;
+    bigint& operator%= (int b);
+    bigint operator% (int b) const;
+    bigint& operator^= (const int &b);
+    bigint operator^ (const int &b) const;
+    friend ostream& operator << (ostream &fout, const bigint &b);
+    void fact(const int n);
+    int isBigger(const bigint &b);
+};
+
+void bigint::fact(const int n) {
+    *this = 1;
+    for (int i = 1; i <= n; i++) {
+        *this *= i;
+    }
+}
+
+bigint::bigint (const string &s) {
+    above = 1;
+    int fplace = 0;
+    a.resize(MAX_SZ, 0);
+    if (s[0] == '-') {
+        above = -1;
+        fplace = 1;
+    }
+
+    if (s[fplace] == '0') {
+        sz = 1;
+        above = 0;
+        return;
+    }
+
+    sz = (int)s.size() - fplace;
+    for (int i = 0, j = s.size()-1; j >= fplace; i++, j--) {
+        a[i] = (s[j] - '0');
+    }
+}
+
+bigint::bigint (int s) {
+    sz = 0;
+    above = 1;
+    a.resize(MAX_SZ, 0);
+    if (s < 0) {
+        s = -s;
+        above = -1;
+    }
+
+    if (s == 0) {
+        sz = 1;
+        above = 0;
+        return;
+    }
+
+    while (s > 0) {
+        a[sz] = s%ss;
+        s /= ss;
+        sz++;
+    }
+}
+
+bigint::bigint () {
+    sz = 1;
+    above = 0;
+    a.resize(MAX_SZ, 0);
+}
+
+bigint& bigint::operator++ () {
+    if (above >= 0) {
+        above = max(above, 1);
+        a[0]++;
+        if (a[0] > ss-1) {
+            for (int i = 0; i < sz; i++) {
+                a[i+1] += a[i]/ss;
+                a[i] %= ss;
+            }
+        }
+        if (a[sz] > 0) { sz++; }
+    } else {
+        if (sz == 1 && a[0] == 1) {
+            above = 0;
+            a[0] = 0;
+            return *this;
+        }
+
+        a[0]--;
+        if (a[0] < 0) {
+            for (int i = 0; i < sz; i++) {
+                if (a[i] < 0) {
+                    a[i] += ss;
+                    a[i+1]--;
+                }
+            }
+        }
+        if (sz > 1 && a[sz-1] == 0) { sz--; }
+    }
+}
+
+bigint& bigint::operator-- () {
+    if (above <= 0) {
+        above = min(above, -1);
+
+        a[0]++;
+        if (a[0] > ss-1) {
+            for (int i = 0; i < sz; i++) {
+                a[i+1] += a[i]/ss;
+                a[i] %= ss;
+            }
+        }
+        if (a[sz] != 0) { sz++; }
+    } else {
+        if (sz == 1 && a[0] == 1) {
+            above = 0;
+            a[0] = 0;
+            return *this;
+        }
+
+        a[0]--;
+        if (a[0] < 0) {
+            for (int i = 0; i < sz; i++) {
+                if (a[i] < 0) {
+                    a[i] += ss;
+                    a[i+1]--;
+                }
+            }
+        }
+        if (sz > 1 && a[sz-1] == 0) { sz--; }
+    }
+}
+
+ostream& operator << (ostream &fout, const bigint &b) {
+    if (b.above == -1) {
+        fout << "-";
+    }
+    for (int i = b.sz-1; i >= 0; i--) {
+        fout << b.a[i];
+    }
+    return fout;
+}
+
+bool bigint::operator== (const bigint &b) {
+    if (sz == b.sz && above == b.above) {
+        for (int i = 0; i < sz; i++) {
+            if (a[i] != b.a[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+    return false;
+}
+
+bool bigint::operator< (const bigint &b) {
+    if (above < b.above) {
+        return true;
+    }
+    if (above > b.above) {
+        return false;
+    }
+
+    if (above == 1) {
+        if (sz < b.sz) {
+            return true;
+        }
+        if (sz > b.sz) {
+            return false;
+        }
+        for (int i = sz-1; i >= 0; i--) {
+            if (a[i] < b.a[i]) {
+                return true;
+            }
+            if (a[i] > b.a[i]) {
+                return false;
+            }
+        }
+        return false;
+    } else {
+        if (sz < b.sz) {
+            return false;
+        }
+        if (sz > b.sz) {
+            return true;
+        }
+        for (int i = sz-1; i >= 0; i--) {
+            if (a[i] < b.a[i]) {
+                return false;
+            }
+            if (a[i] > b.a[i]) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+bool bigint::operator> (const bigint &b) {
+    if (above < b.above) {
+        return false;
+    }
+    if (above > b.above) {
+        return true;
+    }
+
+    if (above == 1) {
+        if (sz < b.sz) {
+            return false;
+        }
+        if (sz > b.sz) {
+            return true;
+        }
+        for (int i = sz-1; i >= 0; i--) {
+            if (a[i] < b.a[i]) {
+                return false;
+            }
+            if (a[i] > b.a[i]) {
+                return true;
+            }
+        }
+        return false;
+    } else {
+        if (sz < b.sz) {
+            return true;
+        }
+        if (sz > b.sz) {
+            return false;
+        }
+        for (int i = sz-1; i >= 0; i--) {
+            if (a[i] < b.a[i]) {
+                return true;
+            }
+            if (a[i] > b.a[i]) {
+                return false;
+            }
+        }
+        return false;
+    }
+}
+
+bool bigint::operator!= (const bigint &b) {
+    return !(*this == b);
+}
+
+bool bigint::operator<= (const bigint &b) {
+    return !(*this > b);
+}
+
+bool bigint::operator>= (const bigint &b) {
+    return !(*this < b);
+}
+
+bigint& bigint::operator= (const bigint &b) {
+    a = b.a;
+    sz = b.sz;
+    above = b.above;
+    return *this;
+}
+
+bigint& bigint::operator= (const int &c) {
+    bigint b(c);
+    a = b.a;
+    sz = b.sz;
+    above = b.above;
+    return *this;
+}
+
+bigint& bigint::operator+= (const bigint &b) {
+    if (b.above == 0) {
+        return *this;
+    }
+    if (above == 0) {
+        return *this = b;
+    }
+
+    if (above == b.above) {
+        sz = max(sz, b.sz);
+        for (int i = 0; i < sz; i++) {
+            a[i] += b.a[i];
+        }
+        for (int i = 0; i < sz; i++) {
+            a[i+1] += a[i]/ss;
+            a[i] %= ss;
+        }
+        if (a[sz] != 0) { sz++; }
+    } else {
+        int key = isBigger(b);
+        if (key == 0) {
+            for (int i = 0; i < sz; i++) {
+                a[i] = 0;
+            }
+            above = 0;
+            sz = 1;
+            return *this;
+        }
+
+        if (key == -1) {
+            above = b.above;
+            sz = max(sz, b.sz);
+            for (int i = 0; i < sz; i++) {
+                a[i] = b.a[i] - a[i];
+            }
+            for (int i = 0; i < sz; i++) {
+                if (a[i] < 0) {
+                    a[i] += ss;
+                    a[i+1]--;
+                }
+            }
+        } else {
+            sz = max(sz, b.sz);
+            for (int i = 0; i < sz; i++) {
+                a[i] -= b.a[i];
+            }
+            for (int i = 0; i < sz; i++) {
+                if (a[i] < 0) {
+                    a[i] += ss;
+                    a[i+1]--;
+                }
+            }
+        }
+        while (sz > 1 && a[sz-1] == 0) { sz--; }
+    }
+}
+
+bigint& bigint::operator+= (const int &c) {
+    bigint b(c);
+    if (b.above == 0) {
+        return *this;
+    }
+    if (above == 0) {
+        return *this = b;
+    }
+
+    if (above == b.above) {
+        sz = max(sz, b.sz);
+        for (int i = 0; i < sz; i++) {
+            a[i] += b.a[i];
+        }
+        for (int i = 0; i < sz; i++) {
+            a[i+1] += a[i]/ss;
+            a[i] %= ss;
+        }
+        if (a[sz] != 0) { sz++; }
+    } else {
+        int key = isBigger(b);
+        if (key == 0) {
+            for (int i = 0; i < sz; i++) {
+                a[i] = 0;
+            }
+            above = 0;
+            sz = 1;
+            return *this;
+        }
+
+        if (key == -1) {
+            above = b.above;
+            sz = max(sz, b.sz);
+            for (int i = 0; i < sz; i++) {
+                a[i] = b.a[i] - a[i];
+            }
+            for (int i = 0; i < sz; i++) {
+                if (a[i] < 0) {
+                    a[i] += ss;
+                    a[i+1]--;
+                }
+            }
+        } else {
+            sz = max(sz, b.sz);
+            for (int i = 0; i < sz; i++) {
+                a[i] -= b.a[i];
+            }
+            for (int i = 0; i < sz; i++) {
+                if (a[i] < 0) {
+                    a[i] += ss;
+                    a[i+1]--;
+                }
+            }
+        }
+        while (sz > 1 && a[sz-1] == 0) { sz--; }
+    }
+}
+
+bigint& bigint::operator-= (const bigint &b) {
+    if (b.above == 0) {
+        return *this;
+    }
+    if (above == 0) {
+        *this = b;
+        this->above = (above == 1) ? -1 : 1;
+        return *this;
+    }
+
+    if (above != b.above) {
+        sz = max(sz, b.sz);
+        for (int i = 0; i < sz; i++) {
+            a[i] += b.a[i];
+        }
+        for (int i = 0; i < sz; i++) {
+            a[i+1] += a[i]/ss;
+            a[i] %= ss;
+        }
+        if (a[sz] != 0) { sz++; }
+    } else {
+        int key = isBigger(b);
+        if (key == 0) {
+            for (int i = 0; i < sz; i++) {
+                a[i] = 0;
+            }
+            above = 0;
+            sz = 1;
+            return *this;
+        }
+
+        if (key == -1) {
+            above = (above == 1) ? -1 : 1;
+            sz = max(sz, b.sz);
+            for (int i = 0; i < sz; i++) {
+                a[i] = b.a[i] - a[i];
+            }
+            for (int i = 0; i < sz; i++) {
+                if (a[i] < 0) {
+                    a[i] += ss;
+                    a[i+1]--;
+                }
+            }
+        } else {
+            sz = max(sz, b.sz);
+            for (int i = 0; i < sz; i++) {
+                a[i] -= b.a[i];
+            }
+            for (int i = 0; i < sz; i++) {
+                if (a[i] < 0) {
+                    a[i] += ss;
+                    a[i+1]--;
+                }
+            }
+        }
+        while (sz > 1 && a[sz-1] == 0) { sz--; }
+    }
+}
+
+bigint& bigint::operator-= (const int &c) {
+    bigint b(c);
+    if (b.above == 0) {
+        return *this;
+    }
+    if (above == 0) {
+        *this = b;
+        this->above = (above == 1) ? -1 : 1;
+        return *this;
+    }
+
+    if (above != b.above) {
+        sz = max(sz, b.sz);
+        for (int i = 0; i < sz; i++) {
+            a[i] += b.a[i];
+        }
+        for (int i = 0; i < sz; i++) {
+            a[i+1] += a[i]/ss;
+            a[i] %= ss;
+        }
+        if (a[sz] != 0) { sz++; }
+    } else {
+        int key = isBigger(b);
+        if (key == 0) {
+            for (int i = 0; i < sz; i++) {
+                a[i] = 0;
+            }
+            above = 0;
+            sz = 1;
+            return *this;
+        }
+
+        if (key == -1) {
+            above = (above == 1) ? -1 : 1;
+            sz = max(sz, b.sz);
+            for (int i = 0; i < sz; i++) {
+                a[i] = b.a[i] - a[i];
+            }
+            for (int i = 0; i < sz; i++) {
+                if (a[i] < 0) {
+                    a[i] += ss;
+                    a[i+1]--;
+                }
+            }
+        } else {
+            sz = max(sz, b.sz);
+            for (int i = 0; i < sz; i++) {
+                a[i] -= b.a[i];
+            }
+            for (int i = 0; i < sz; i++) {
+                if (a[i] < 0) {
+                    a[i] += ss;
+                    a[i+1]--;
+                }
+            }
+        }
+        while (sz > 1 && a[sz-1] == 0) { sz--; }
+    }
+}
+
+bigint bigint::operator+ (const bigint &b) const {
+    bigint c;
+    c += *this;
+    c += b;
+    return c;
+}
+
+bigint bigint::operator- (const bigint &b) const {
+    bigint c;
+    c += *this;
+    c -= b;
+    return c;
+}
+
+bigint bigint::operator+ (const int &b) const {
+    bigint c;
+    c += b;
+    c += *this;
+    return c;
+}
+
+bigint bigint::operator- (const int &b) const {
+    bigint c;
+    c += *this;
+    c -= b;
+    return c;
+}
+
+bigint& bigint::operator*= (const bigint &b) {
+    if (above == 0) {
+        return *this;
+    }
+    if (b.above == 0) {
+        return *this = b;
+    }
+    if (above == b.above) {
+        above = 1;
+    } else {
+        above = -1;
+    }
+
+    bigint c;
+    for (int i = 0; i < sz; i++) {
+        for (int j = 0; j < b.sz; j++) {
+            c.a[i+j] += a[i] * b.a[j];
+        }
+    }
+
+    sz = sz+b.sz+1;
+
+    for (int i = 0; i < sz; i++) {
+        c.a[i+1] += c.a[i]/ss;
+        c.a[i] %= ss;
+    }
+
+    a = c.a;
+    while (sz > 1 && a[sz-1] == 0) { sz--; }
+}
+
+bigint& bigint::operator*= (int c) {
+    bigint b(c);
+    if (above == 0) {
+        return *this;
+    }
+    if (b.above == 0) {
+        return *this = b;
+    }
+    if (above == b.above) {
+        above = 1;
+    } else {
+        above = -1;
+    }
+
+    bigint d;
+    for (int i = 0; i < sz; i++) {
+        for (int j = 0; j < b.sz; j++) {
+            d.a[i+j] += a[i] * b.a[j];
+        }
+    }
+
+    sz = sz+b.sz+1;
+    for (int i = 0; i < sz; i++) {
+        d.a[i+1] += d.a[i]/ss;
+        d.a[i] %= ss;
+    }
+
+    a = d.a;
+    while (sz > 1 && a[sz-1] == 0) { sz--; }
+}
+
+bigint bigint::operator* (const bigint &b) const {
+    bigint c;
+    c = *this;
+    c *= b;
+    return c;
+}
+
+bigint bigint::operator* (const int &b) const {
+    bigint c;
+    c = b;
+    c *= *this;
+    return c;
+}
+
+bigint& bigint::operator/= (int b) {
+    if (b == 0) {
+        return *this;
+    }
+    if (above == 0) {
+        return *this;
+    }
+    if (above > 0 && b < 0) {
+        above = -1;
+    }
+    if (above < 0 && b < 0) {
+        above = 1;
+    }
+
+    b = abs(b);
+    bigint c;
+    c.above = above;
+    c.sz = 0;
+    int s = 0, pos = sz-1;
+    while (pos >= 0 && s < b) {
+        s = s*ss + a[pos]; pos--;
+    }
+    c.a[c.sz] = s / b; c.sz++;
+    s = (s % b);
+    for (int i = pos; i >= 0; i--) {
+        s = (s % b)*ss + a[i];
+        c.a[c.sz] = s / b; c.sz++;
+    }
+    *this = c;
+    reverse(a.begin(), a.begin()+sz);
+    while (sz > 1 && a[sz-1] == 0) { sz--; }
+}
+
+bigint& bigint::operator%= (int b) {
+    if (b == 0) {
+        return *this;
+    }
+    if (above == 0) {
+        return *this;
+    }
+    if (above > 0 && b < 0) {
+        above = -1;
+    }
+    if (above < 0 && b < 0) {
+        above = 1;
+    }
+
+    b = abs(b);
+    bigint c;
+    c.above = above;
+    c.sz = 0;
+    int s = 0, pos = sz-1;
+    while (pos >= 0 && s < b) {
+        s = s*ss + a[pos]; pos--;
+    }
+    c.a[c.sz] = s / b; c.sz++;
+    s = (s % b);
+    for (int i = pos; i >= 0; i--) {
+        s = (s % b)*ss + a[i];
+        c.a[c.sz] = s / b; c.sz++;
+    }
+    s = (s % b);
+    return *this = (bigint)s;
+}
+
+bigint bigint::operator/ (int b) const {
+    bigint c;
+    c = *this;
+    c /= b;
+    return c;
+}
+
+bigint bigint::operator% (int b) const {
+    bigint c;
+    c = *this;
+    c %= b;
+    return c;
+}
+
+bigint& bigint::operator^= (const int &b) {
+    int n = b;
+    if (b%2 == 0) {
+        above = 1;
+    }
+    bigint c(1);
+    while (n) {
+        if (n%2) {
+            c *= *this;
+        }
+        (*this) *= (*this);
+        n >>= 1;
+    }
+    return *this = c;
+}
+
+int bigint::isBigger(const bigint &b) {
+    if (sz > b.sz) {
+        return 1;
+    }
+    if (sz < b.sz) {
+        return -1;
+    }
+    for (int i = sz-1; i >= 0; i--) {
+        if (a[i] < b.a[i]) {
+            return -1;
+        }
+        if (a[i] > b.a[i]) {
+            return 1;
+        }
+    }
+    return 0;
+}
